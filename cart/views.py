@@ -7,7 +7,6 @@ from .models import Cart
 from .serializers import CartSerializer
 
 
-# Create your views here.
 class CartAPI(viewsets.ViewSet):
     @swagger_auto_schema(request_body=openapi.Schema(type=openapi.TYPE_OBJECT,
                                                      properties={"book": openapi.Schema(type=openapi.TYPE_INTEGER),

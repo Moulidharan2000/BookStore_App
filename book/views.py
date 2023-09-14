@@ -17,7 +17,7 @@ class BooksAPI(viewsets.ViewSet):
             serializer = BookSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            RedisBooks.save(request.data.get("id"), serializer.data)
+            # RedisBooks.save(request.data.get("id"), serializer.data)
             return Response({"message": "Book Created", "status": 201, "data": serializer.data},
                             status=status.HTTP_201_CREATED)
         except Exception as ex:
@@ -44,7 +44,7 @@ class BooksAPI(viewsets.ViewSet):
             serializer = BookSerializer(book, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            RedisBooks.save(request.data.get("user"), serializer.data)
+            # RedisBooks.save(request.data.get("user"), serializer.data)
             return Response({"message": "Book Updated", "status": 200, "data": serializer.data},
                             status=status.HTTP_200_OK)
         except Exception as ex:
@@ -59,7 +59,7 @@ class BooksAPI(viewsets.ViewSet):
         try:
             book = Book.objects.get(id=request.data.get("id"))
             book.delete()
-            RedisBooks.delete(request.data.get("user"), request.data.get("id"))
+            # RedisBooks.delete(request.data.get("user"), request.data.get("id"))
             return Response({"message": "Book Deleted", "status": 200, "data": {}},
                             status=status.HTTP_200_OK)
         except Exception as ex:
