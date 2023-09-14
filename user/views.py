@@ -1,5 +1,6 @@
 import os
 import jwt
+from django.contrib.auth.hashers import make_password
 from rest_framework.reverse import reverse
 from django.core.mail import send_mail
 from rest_framework.views import APIView
@@ -11,14 +12,19 @@ from .utils import JWToken, user_verify
 from drf_yasg.utils import swagger_auto_schema
 
 
-# Create your views here.
 class UserRegister(APIView):
     @swagger_auto_schema(request_body=RegisterSerializer, operation_summary="User Register")
     def post(self, request):
         try:
             serializer = RegisterSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
+            superuser = request.data.get("superuser")
             serializer.save()
+            key = os.environ.get("SUPERUSER")
+            user = User.objects.get(username=request.data.get("username"))
+            if superuser == key:
+                user.is_superuser = True
+                user.save()
             token = JWToken.encode({"user": serializer.data.get("id"), "aud": "register"})
             subject = 'User Registered'
             message = f'{request.get_host()}/{reverse("verify_user")}?token={token}'
@@ -65,19 +71,20 @@ class VerifyUser(APIView):
             return Response({"message": str(ex), "status": 400, "data": {}}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class VerifySuperuser(APIView):
-    @swagger_auto_schema(operation_summary="Verify_SuperUser")
-    @user_verify
-    def post(self, request):
+class PasswordReset(APIView):
+    def put(self, request):
         try:
-            user = User.objects.get(id=request.data.get("user"))
-            if not user:
-                raise Exception("Invalid User")
-            user.is_superuser = True if not user.is_superuser else False
-            user.save()
-            return Response({"message": "User Verification Success", "status": 200, "is_superuser": user.is_superuser},
+            user = User.objects.get(username=request.data.get("username"))
+            if user:
+                user.password = make_password(request.data.get("password"))
+                user.save()
+            return Response({"message": "Password Reset Success", "status": 200,
+                            "data": {"Username": request.data.get("username"),
+                                     "Reset_password": request.data.get("password")}},
                             status=status.HTTP_200_OK)
         except Exception as ex:
-            return Response({"message": str(ex), "status": 400, "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": str(ex), "status": 400, "data": {}},
+                            status=status.HTTP_400_BAD_REQUEST)
+
 
 
