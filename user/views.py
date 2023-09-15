@@ -1,4 +1,6 @@
 import os
+import re
+
 import jwt
 from django.contrib.auth.hashers import make_password
 from rest_framework.reverse import reverse
@@ -71,16 +73,50 @@ class VerifyUser(APIView):
             return Response({"message": str(ex), "status": 400, "data": {}}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class PasswordReset(APIView):
-    def put(self, request):
+class ForgotPassword(APIView):
+    def post(self, request):
         try:
             user = User.objects.get(username=request.data.get("username"))
             if user:
-                user.password = make_password(request.data.get("password"))
-                user.save()
+                token = JWToken.encode({"user": user.username, "aud": "register"})
+                subject = 'Password Resetting'
+                message = f'{request.get_host()}/{reverse("reset_pass")}?token={token}'
+                from_email = os.environ.get("EMAIL_HOST_USER")
+                recipient_list = [user.email]
+                print(token)
+                send_mail(subject, message, from_email, recipient_list)
+            return Response({"message": "Email Sent for Reset Password", "status": 200},
+                            status=status.HTTP_200_OK)
+        except Exception as ex:
+            return Response({"message": str(ex), "status": 400, "data": {}},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordReset(APIView):
+    def put(self, request):
+        try:
+            query_param = request.GET.get("token")
+            if not query_param:
+                raise Exception("Invalid Token")
+            token = jwt.decode(query_param, os.environ.get("key"), [os.environ.get("algorithm")], audience="register")
+            username = token.get("user")
+            print(username)
+            user = User.objects.get(username=username)
+            if user is None:
+                raise Exception("User not Found")
+            new_password = request.data.get("new_password")
+            password_pattern = "^[A-Za-z]{6}[0-9]{1}[!@#$&]{1}$"
+            matcher = re.fullmatch(password_pattern, new_password)
+            if not matcher:
+                raise Exception("Invalid Password, Atleast 8 characters " +
+                                "contains alphabets, 1 numerical character, 1 special character")
+            confirm_password = request.data.get("confirm_password")
+            if new_password != confirm_password:
+                raise Exception("Password Should Match")
+            user.password = make_password(request.data.get("confirm_password"))
+            user.save()
             return Response({"message": "Password Reset Success", "status": 200,
-                            "data": {"Username": request.data.get("username"),
-                                     "Reset_password": request.data.get("password")}},
+                            "data": {"Reset_password": request.data.get("confirm_password")}},
                             status=status.HTTP_200_OK)
         except Exception as ex:
             return Response({"message": str(ex), "status": 400, "data": {}},
