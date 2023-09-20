@@ -1,7 +1,8 @@
 venv/
 .coverage
 .coveragerc
-pytest.ini
 htmlcov/
 .pytest_cache/
 .env
+.idea/
+__pycache__/

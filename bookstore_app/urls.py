@@ -34,6 +34,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include("user.urls")),
     path('book/', include("book.urls")),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('book-swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('cart/', include("cart.urls"))
 ]

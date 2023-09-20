@@ -39,7 +39,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise Exception("Invalid Email Address")
         phone = attrs.get("phone")
         phone_pattern = "^[6-9]{1}[0-9]{9}$"
-        matcher = re.fullmatch(phone_pattern, phone)
+        matcher = re.fullmatch(phone_pattern, str(phone))
         if not matcher:
             raise Exception("Invalid Phone Number")
         return super().validate(attrs)
